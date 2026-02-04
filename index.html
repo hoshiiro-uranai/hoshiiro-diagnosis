@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>星色診断（太陽星座×宿曜）</title>
+  <style>
+    :root{
+      --bg:#fef4f4;
+      --card:#ffffff;
+      --ink:#1f2a37;
+      --muted:#6b7280;
+      --line:#e5e7eb;
+      --accent:#bbe2f1;
+      --accent2:#f6d6d6;
+      --shadow:0 10px 30px rgba(0,0,0,.06);
+      --radius:18px;
+    }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", "Yu Gothic", sans-serif;
+      color:var(--ink);
+      background: radial-gradient(1200px 600px at 20% -10%, var(--accent), transparent 60%),
+                  radial-gradient(900px 500px at 90% 0%, var(--accent2), transparent 55%),
+                  var(--bg);
+    }
+    .wrap{max-width:900px;margin:0 auto;padding:22px 16px 44px;}
+    header{
+      background:rgba(255,255,255,.72);
+      border:1px solid rgba(255,255,255,.65);
+      box-shadow: var(--shadow);
+      border-radius:var(--radius);
+      padding:18px 16px;
+      backdrop-filter: blur(8px);
+    }
+    h1{margin:0;font-size:20px;letter-spacing:.02em;}
+    .sub{margin:8px 0 0;color:var(--muted);font-size:13px;line-height:1.75;}
+    .grid{
+      margin-top:14px;
+      display:grid;
+      grid-template-columns:1fr;
+      gap:14px;
+    }
+    @media (min-width:820px){
+      .grid{grid-template-columns:1.22fr .78fr;}
+    }
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow: var(--shadow);
+      padding:16px;
+    }
+    .card h2{margin:0 0 10px;font-size:16px;}
+    .row{display:grid;grid-template-columns:1fr;gap:10px;margin:10px 0;}
+    @media (min-width:560px){
+      .row.two{grid-template-columns:1fr 1fr;}
+    }
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;}
+    input{
+      width:100%;
+      font-size:16px;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      outline:none;
+      background:#fff;
+      box-sizing:border-box;
+    }
+    input:focus{border-color:#9ad2e8; box-shadow:0 0 0 3px rgba(187,226,241,.45);}
+    input[disabled]{
+      background:#f9fafb;
+      color:#374151;
+      opacity:1;
+      cursor:not-allowed;
+    }
+    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+    button{
+      border:0;
+      border-radius:999px;
+      padding:11px 14px;
+      font-size:14px;
+      cursor:pointer;
+      background: var(--accent);
+      box-shadow: var(--shadow);
+    }
+    button.secondary{background:#fff;border:1px solid var(--line);}
+    .note{
+      margin-top:10px;
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.75;
+    }
+    .result{
+      margin-top:14px;
+      padding:14px;
+      border-radius:16px;
+      border:1px dashed rgba(31,42,55,.18);
+      background: rgba(187,226,241,.25);
+    }
+    .big{
+      font-size:20px;
+      font-weight:800;
+      margin:0 0 8px;
+      letter-spacing:.02em;
+    }
+    .kv{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:8px;
+      margin-top:10px;
+      font-size:14px;
+    }
+    .kv div{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:10px 12px;
+    }
+    .kv b{display:block;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:4px;}
+    .linkbox{
+      margin-top:10px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    a{
+      color:#0f172a;
+      text-decoration:none;
+      border-bottom:1px solid rgba(15,23,42,.2);
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 12px;
+      border-radius:999px;
+      background:#fff;
+      border:1px solid var(--line);
+      box-shadow: var(--shadow);
+      font-size:13px;
+    }
+    .warn{
+      color:#7c2d12;
+      background:rgba(246,214,214,.55);
+      border:1px solid rgba(124,45,18,.15);
+      padding:10px 12px;
+      border-radius:14px;
+      margin-top:10px;
+      font-size:13px;
+      line-height:1.7;
+    }
+    .small{font-size:12px;color:var(--muted);}
+    .footer{
+      margin-top:14px;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.75;
+    }
+    code{background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;padding:1px 6px;font-size:12px;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>星色診断（太陽星座 × 宿曜）</h1>
+      <p class="sub">
+        生年月日から <b>太陽星座</b> と <b>宿曜（28宿）</b>を自動算出し、<b>感情タイプ（5）</b>→<b>星色タイプ（16）</b>へつなげます。<br>
+        表示された <b>「太陽星座｜星色タイプ」</b> のリンクから、note本文の該当タイプへ進めます。
+      </p>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <h2>入力</h2>
+
+        <div class="row two">
+          <div>
+            <label for="birth">生年月日</label>
+            <input id="birth" type="date" />
+          </div>
+          <div>
+            <label for="shukuAuto">宿曜（28宿）※自動算出</label>
+            <input id="shukuAuto" type="text" placeholder="生年月日を入力すると自動表示" disabled />
+          </div>
+        </div>
+
+        <div class="btns">
+          <button id="calc">診断する</button>
+          <button id="reset" class="secondary">リセット</button>
+        </div>
+
+        <div id="autoWarn" class="warn" style="display:none;"></div>
+
+        <div id="result" class="result" style="display:none;">
+          <p class="big" id="headline"></p>
+
+          <div class="kv">
+            <div><b>太陽星座</b><span id="sun"></span></div>
+            <div><b>宿曜（28宿）</b><span id="shukuOut"></span></div>
+            <div><b>感情タイプ（5）</b><span id="emo"></span></div>
+            <div><b>星色タイプ（16）</b><span id="hoshiiro"></span></div>
+          </div>
+
+          <div class="linkbox">
+            <span class="pill">▶ 読むページ：<a id="noteLink" href="#" target="_blank" rel="noopener">noteへ</a></span>
+            <span class="pill small" id="anchorHint"></span>
+          </div>
+
+          <div class="footer">
+            ※この診断は自己理解のための読みものです。医療・心理・法律判断を行うものではありません。
+          </div>
+        </div>
+      </section>
+
+      <aside class="card">
+        <h2>設定（ここだけ）</h2>
+
+        <div class="warn">
+          <b>① noteリンクを設定してください</b><br>
+          このHTML内の <code>NOTE_BASE_URL</code> を、きりんさんの note 記事URLに置き換えます。<br>
+          例：<span class="small">https://note.com/xxxxx/n/xxxxxxxx</span>
+        </div>
+
+        <p class="note">
+          <b>② 宿曜の境界日でズレたら</b><br>
+          宿が変わる境界付近の誕生日だけ、ズレることがあります。<br>
+          その場合は <code>AYANAMSA_TWEAK_DEG</code> を <b>±0.5〜±1.0</b> で微調整すると一致しやすくなります（下のコードにあります）。
+        </p>
+
+        <p class="note">
+          <b>③ noteの「見出しジャンプ」について</b><br>
+          note側の見出しに、たとえば <code>### 桜 星色タイプ</code> のような見出しを置くと、アンカーが自動生成されます。<br>
+          ただし noteのアンカーは環境で揺れることがあるので、最終的には「目次リンク」運用など、確実な導線に整えるのもおすすめです。
+        </p>
+      </aside>
+    </div>
+  </div>
+
+<script>
+/* ============================
+   0) noteのURLをここに入れる
+   ============================ */
+const NOTE_BASE_URL = "https://note.com/xxxxx/n/xxxxxxxx"; // ←ここを差し替え
+
+/* ============================
+   1) 28宿リスト（28等分の順番で使用）
+   ※ ここは「28等分割」方式なので、この並び順が大事です。
+   一般的な28宿（角→…→軫）順で固定しています。
+   ============================ */
+const SHUKU_LIST = [
+  "角宿","亢宿","氐宿","房宿","心宿","尾宿","箕宿",
+  "斗宿","牛宿","女宿","虚宿","危宿","室宿","壁宿",
+  "奎宿","婁宿","胃宿","昴宿","畢宿","觜宿","参宿",
+  "井宿","鬼宿","柳宿","星宿","張宿","翼宿","軫宿"
+];
+
+/* ============================
+   2) 宿曜28宿 → 感情タイプ（5）割り当て（確定）
+   きりんさんのSTEP1をツール用に固定
+   ============================ */
+const SHUKU_TO_EMO = {
+  // 共感・吸収型
+  "畢宿":"共感・吸収型","觜宿":"共感・吸収型","参宿":"共感・吸収型",
+  "鬼宿":"共感・吸収型","柳宿":"共感・吸収型","翼宿":"共感・吸収型","軫宿":"共感・吸収型",
+
+  // 直感・理想型
+  "昴宿":"直感・理想型","虚宿":"直感・理想型","室宿":"直感・理想型",
+  "奎宿":"直感・理想型","壁宿":"直感・理想型","胃宿":"直感・理想型",
+
+  // 安定・防衛型
+  "牛宿":"安定・防衛型","女宿":"安定・防衛型","危宿":"安定・防衛型","斗宿":"安定・防衛型","井宿":"安定・防衛型",
+
+  // 表現・放出型
+  "房宿":"表現・放出型","心宿":"表現・放出型","尾宿":"表現・放出型","婁宿":"表現・放出型","張宿":"表現・放出型",
+
+  // 探求・内省型
+  "角宿":"探求・内省型","亢宿":"探求・内省型","氐宿":"探求・内省型","箕宿":"探求・内省型","星宿":"探求・内省型",
+};
+
+/* ============================
+   3) 太陽星座（12）算出
+   ============================ */
+function getSunSign(dateObj){
+  const m = dateObj.getMonth()+1;
+  const d = dateObj.getDate();
+  if ((m===3 && d>=21) || (m===4 && d<=19)) return "おひつじ座";
+  if ((m===4 && d>=20) || (m===5 && d<=20)) return "おうし座";
+  if ((m===5 && d>=21) || (m===6 && d<=21)) return "ふたご座";
+  if ((m===6 && d>=22) || (m===7 && d<=22)) return "かに座";
+  if ((m===7 && d>=23) || (m===8 && d<=22)) return "しし座";
+  if ((m===8 && d>=23) || (m===9 && d<=22)) return "おとめ座";
+  if ((m===9 && d>=23) || (m===10 && d<=23)) return "てんびん座";
+  if ((m===10 && d>=24) || (m===11 && d<=22)) return "さそり座";
+  if ((m===11 && d>=23) || (m===12 && d<=21)) return "いて座";
+  if ((m===12 && d>=22) || (m===1 && d<=19)) return "やぎ座";
+  if ((m===1 && d>=20) || (m===2 && d<=18)) return "みずがめ座";
+  return "うお座";
+}
+
+/* ============================
+   4) 星座グループ（A〜D）
+   乙女座は橋渡しなので、感情タイプで振り分け
+   - 安定/防衛・探求/内省 → 現実寄り（C）
+   - 共感/吸収・直感/理想・表現/放出 → 未来寄り（B）
+   ============================ */
+function getZodiacGroup(sunSign, emoType){
+  const A = new Set(["うお座","かに座","てんびん座"]);  // 境界・共感
+  const B = new Set(["いて座","みずがめ座"]);            // 未来・意味
+  const C = new Set(["やぎ座","おうし座"]);              // 現実・責任
+  const D = new Set(["おひつじ座","しし座","ふたご座"]);  // 表現・衝動
+
+  if (A.has(sunSign)) return "A";
+  if (B.has(sunSign)) return "B";
+  if (C.has(sunSign)) return "C";
+  if (D.has(sunSign)) return "D";
+  if (sunSign === "さそり座") return "C";
+
+  if (sunSign === "おとめ座"){
+    if (emoType === "安定・防衛型" || emoType === "探求・内省型") return "C";
+    return "B";
+  }
+  return "B";
+}
+
+/* ============================
+   5) 星座グループ × 感情タイプ → 星色タイプ（16）確定
+   ============================ */
+const HOSHI_MAP = {
+  // A（境界・共感）
+  "A|共感・吸収型":"桜",
+  "A|直感・理想型":"水晶",
+  "A|探求・内省型":"白花",
+  "A|安定・防衛型":"銀",
+  "A|表現・放出型":"桜",
+
+  // B（未来・意味）
+  "B|直感・理想型":"紺碧",
+  "B|探求・内省型":"翡翠",
+  "B|共感・吸収型":"空",
+  "B|安定・防衛型":"亜麻",
+  "B|表現・放出型":"金",
+
+  // C（現実・責任）
+  "C|安定・防衛型":"琥珀",
+  "C|探求・内省型":"瑠璃",
+  "C|共感・吸収型":"珊瑚",
+  "C|表現・放出型":"蜜柑",
+  "C|直感・理想型":"亜麻",
+
+  // D（表現・衝動）
+  "D|表現・放出型":"紅",
+  "D|直感・理想型":"金",
+  "D|共感・吸収型":"青磁",
+  "D|探求・内省型":"蒼黒",
+  "D|安定・防衛型":"蜜柑"
+};
+
+/* ============================
+   6) noteアンカー生成（簡易）
+   ※最終的にはnote側の見出し運用で確実に揃えるのがおすすめ
+   ============================ */
+function anchorFor(hoshiiro){
+  const EN = {
+    "桜":"sakura",
+    "紅":"beni",
+    "翡翠":"hisui",
+    "紺碧":"konpeki",
+    "琥珀":"kohaku",
+    "水晶":"suisho",
+    "白花":"hakuka",
+    "銀":"gin",
+    "空":"sora",
+    "亜麻":"ama",
+    "瑠璃":"ruri",
+    "珊瑚":"sango",
+    "蜜柑":"mikan",
+    "金":"kin",
+    "青磁":"seiji",
+    "蒼黒":"sokoku"
+  };
+  return "#type-" + (EN[hoshiiro] || "result");
+}
+
+
+/* ============================
+   7) 宿曜（A方式）自動算出：生年月日→月の位置→28等分
+   - 簡易モデル
+   - 境界日はAYANAMSA_TWEAK_DEGで微調整可能
+   ============================ */
+
+// 微調整用（最初は 0 でOK）
+const AYANAMSA_TWEAK_DEG = 0.0;
+
+function degToRad(d){ return d * Math.PI / 180; }
+function norm360(d){
+  d = d % 360;
+  if (d < 0) d += 360;
+  return d;
+}
+function julianDayFromDate(y,m,d){
+  if (m <= 2){ y -= 1; m += 12; }
+  const A = Math.floor(y/100);
+  const B = 2 - A + Math.floor(A/4);
+  const JD = Math.floor(365.25*(y + 4716))
+           + Math.floor(30.6001*(m + 1))
+           + d + B - 1524.5;
+  return JD;
+}
+function lahiriAyanamsaDeg(T){
+  // 実用向け近似 + 微調整
+  return 22.460148 + 1.396042*T + 0.000308*(T*T) + AYANAMSA_TWEAK_DEG;
+}
+function moonEclipticLongitudeDeg(JD){
+  const D = (JD - 2451545.0);
+
+  let Lp = 218.3164477 + 13.17639648*D; // 平均黄経
+  let Mp = 134.9633964 + 13.06499295*D; // 平均近点角
+  let M  = 357.5291092 + 0.98560028*D;  // 太陽近点角
+  let F  = 93.2720950 + 13.22935024*D;  // 月の距離角
+
+  Lp = norm360(Lp); Mp = norm360(Mp); M = norm360(M); F = norm360(F);
+
+  // 主要項のみの簡易摂動
+  const lon =
+    Lp
+    + 6.289 * Math.sin(degToRad(Mp))
+    + 1.274 * Math.sin(degToRad(2*Lp - Mp))
+    + 0.658 * Math.sin(degToRad(2*Lp))
+    + 0.214 * Math.sin(degToRad(2*Mp))
+    - 0.186 * Math.sin(degToRad(M))
+    - 0.114 * Math.sin(degToRad(2*F));
+
+  return norm360(lon);
+}
+function getShukuFromDateStr(yyyy_mm_dd){
+  const [yy, mm, dd] = yyyy_mm_dd.split("-").map(v => parseInt(v,10));
+  if (!yy || !mm || !dd) return "";
+
+  const JD = julianDayFromDate(yy, mm, dd);
+  const moonLon = moonEclipticLongitudeDeg(JD);
+
+  const T = (JD - 2451545.0) / 36525.0;
+  const aya = lahiriAyanamsaDeg(T);
+  const siderealLon = norm360(moonLon - aya);
+
+  const seg = 360 / 28;
+  const idx = Math.floor(siderealLon / seg);
+
+  return SHUKU_LIST[idx] || "";
+}
+
+/* ============================
+   8) UI
+   ============================ */
+const birthEl = document.getElementById("birth");
+const shukuAutoEl = document.getElementById("shukuAuto");
+const warnEl = document.getElementById("autoWarn");
+const resultEl = document.getElementById("result");
+
+function showWarn(msg){
+  warnEl.style.display = "block";
+  warnEl.innerHTML = msg;
+}
+function hideWarn(){
+  warnEl.style.display = "none";
+  warnEl.textContent = "";
+}
+
+function clearResult(){
+  resultEl.style.display = "none";
+  document.getElementById("headline").textContent = "";
+  document.getElementById("sun").textContent = "";
+  document.getElementById("shukuOut").textContent = "";
+  document.getElementById("emo").textContent = "";
+  document.getElementById("hoshiiro").textContent = "";
+  shukuAutoEl.value = "";
+}
+
+birthEl.addEventListener("input", ()=>{
+  hideWarn();
+  clearResult();
+  const birth = birthEl.value;
+  if (!birth) { shukuAutoEl.value = ""; return; }
+  const shuku = getShukuFromDateStr(birth);
+  shukuAutoEl.value = shuku ? shuku : "";
+  if (!shuku){
+    showWarn("宿曜の自動算出に失敗しました。日付を確認してください。");
+  }
+});
+
+document.getElementById("reset").addEventListener("click", ()=>{
+  birthEl.value = "";
+  hideWarn();
+  clearResult();
+});
+
+document.getElementById("calc").addEventListener("click", ()=>{
+  hideWarn();
+  clearResult();
+
+  const birth = birthEl.value;
+  if (!birth){
+    showWarn("生年月日を入力してください。");
+    return;
+  }
+
+  const shuku = getShukuFromDateStr(birth);
+  if (!shuku){
+    showWarn("宿曜の自動算出に失敗しました。日付を確認してください。");
+    return;
+  }
+  shukuAutoEl.value = shuku;
+
+  const emo = SHUKU_TO_EMO[shuku] || "";
+  if (!emo){
+    showWarn("宿曜→感情タイプの割り当てが見つかりませんでした。宿名表記を確認してください。");
+    return;
+  }
+
+  const dateObj = new Date(birth + "T00:00:00");
+  const sun = getSunSign(dateObj);
+
+  const group = getZodiacGroup(sun, emo);
+  const key = `${group}|${emo}`;
+  const hoshiiro = HOSHI_MAP[key] || "桜";
+
+  const headline = `${sun}｜${hoshiiro} 星色タイプ`;
+
+  document.getElementById("headline").textContent = headline;
+  document.getElementById("sun").textContent = sun;
+  document.getElementById("shukuOut").textContent = shuku;
+  document.getElementById("emo").textContent = emo;
+  document.getElementById("hoshiiro").textContent = hoshiiro;
+
+  // noteリンク
+  const anc = anchorFor(hoshiiro);
+  const url = NOTE_BASE_URL + anc;
+
+  const a = document.getElementById("noteLink");
+  a.href = url;
+  a.textContent = "このタイプ本文へ";
+  document.getElementById("anchorHint").textContent = `（見出しジャンプ：${anc}）`;
+
+  resultEl.style.display = "block";
+
+  // NOTE_BASE_URLが未設定っぽい時は優しく案内
+  if (NOTE_BASE_URL.includes("note.com/xxxxx")){
+    showWarn("※まだ <code>NOTE_BASE_URL</code> が仮のままです。ご自身のnote記事URLに差し替えてください。");
+  }
+});
+</script>
+</body>
+</html>
